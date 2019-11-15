@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const _ = require("lodash");
 
 const createPostValidator = (req, res, next) => {
   // Title
@@ -15,42 +16,36 @@ const createPostValidator = (req, res, next) => {
   req.check("body", "Number of characters is at least 4").isLength({
     min: 4
   });
-  // Check for errors
+  //
   const errors = req.validationErrors();
   if (errors) {
     const firstError = errors.map(error => error.msg)[0];
     return res.status(400).send({ error: firstError });
   }
-
   next();
 };
 
 const userValidator = (req, res, next) => {
+  // name
   req.check("name", "Name is required.").notEmpty();
+  // password
+  const { confirmPassword } = req.body;
   req
     .check("password", "Password must be at least 8 characters")
     .isLength({ min: 8 });
+  req.check("password", "Password must contain a number").matches(/\d/);
+  req
+    .check("password", "Password Confirm does not match password.")
+    .equals(confirmPassword);
+  // email
   req.check("email", "Email is required.").notEmpty();
   req.check("email", "Invalid Email!").isEmail();
+  //
   const errors = req.validationErrors();
   if (errors) {
     const firstError = errors.map(error => error.msg)[0];
     return res.status(400).send({ error: firstError });
   }
-
-  // body("email").custom(async value => {
-  //   const user = await User.findOne({ email: value });
-  //   try {
-  //     throw new Error("E-mail already in use.");
-  //   } catch (e) {
-  //     const errors = req.validationErrors();
-  //     if (errors) {
-  //       const firstError = errors.map(error => error.msg)[0];
-  //       return res.status(400).send({ error: firstError });
-  //     }
-  //   }
-  // });
-
   next();
 };
 

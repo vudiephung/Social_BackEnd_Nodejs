@@ -27,6 +27,7 @@ exports.getUserById = async (req, res) => {
 };
 
 exports.createUser = async (req, res) => {
+  delete req.body.confirmPassword;
   const user = new User(req.body);
   try {
     await user.save();
@@ -34,7 +35,7 @@ exports.createUser = async (req, res) => {
     sendWelcomeEmail(user.email, user.name);
     res.status(201).send({ user, token });
   } catch (e) {
-    res.status(400).send({ error: e.errmsg });
+    res.status(400).send({ error: e });
   }
 };
 

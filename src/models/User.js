@@ -8,14 +8,14 @@ const userSchema = new mongoose.Schema(
     name: {
       type: String,
       trim: true,
-      unique: true,
       required: true
     },
     email: {
       type: String,
-      trim: true,
       required: true,
-      unique: true
+      unique: true,
+      trim: true,
+      lowercase: true
     },
     about: {
       type: String,
@@ -24,6 +24,9 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true
+    },
+    confirmPassword: {
+      type: String
     },
     tokens: [
       {
@@ -42,7 +45,16 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.methods.generateAuthToken = async function () {
+// userSchema.path("email").validate(function(value, done) {
+//   this.model("User").count({ email: value }, function(err, count) {
+//     if (err) {
+//       return done(err);
+//     }
+//     done(!count);
+//   });
+// }, "Email already exists");
+
+userSchema.methods.generateAuthToken = async function() {
   const user = this;
   const token = jwt.sign(
     { _id: user._id.toString() },
@@ -53,7 +65,7 @@ userSchema.methods.generateAuthToken = async function () {
   return token;
 };
 
-userSchema.statics.findByCredentials = async function (email, password) {
+userSchema.statics.findByCredentials = async function(email, password) {
   const user = await User.findOne({ email });
   if (!user) throw new Error();
   const isMatch = await bcrypt.compare(password, user.password);
@@ -61,14 +73,14 @@ userSchema.statics.findByCredentials = async function (email, password) {
   return user;
 };
 
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function(next) {
   const user = this;
   if (user.isModified("password"))
     user.password = await bcrypt.hash(user.password, 8);
   next();
 });
 
-userSchema.pre("remove", async function (next) {
+userSchema.pre("remove", async function(next) {
   const user = this;
   await Post.deleteMany({ owner: user._id });
   next();
