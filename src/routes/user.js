@@ -10,7 +10,7 @@ const {
   removeUser,
   getAllUsers,
   updateUser,
-  uploadAvatar,
+  //uploadAvatar,
   handleUploadError,
   getUserById,
   getUserAvatar,
@@ -48,12 +48,12 @@ router.post("/signup", userValidator, createUser);
 router.post("/login", loginUser);
 router.post("/logout", auth, signoutUser);
 router.post("/login/all", auth, signoutAll);
-router.post(
-  "/users/me/avatar",
-  auth,
-  upload.single("avatar"),
-  uploadAvatar,
-  handleUploadError
-);
+// router.post(
+//   "/users/me/avatar",
+//   auth,
+//   upload.single("avatar"),
+//   uploadAvatar,
+//   handleUploadError
+// );
 
 module.exports = router;

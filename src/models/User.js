@@ -1,21 +1,20 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const Post = require("./Post");
+const Post = require("../models/Post");
 
 const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       trim: true,
+      unique: true,
       required: true
     },
     email: {
       type: String,
-      required: true,
-      unique: true,
       trim: true,
-      lowercase: true
+      required: true
     },
     about: {
       type: String,
@@ -23,10 +22,12 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true
+      required: true,
+      select: false
     },
     confirmPassword: {
-      type: String
+      type: String,
+      select: false
     },
     tokens: [
       {
@@ -37,22 +38,13 @@ const userSchema = new mongoose.Schema(
       }
     ],
     avatar: {
-      type: Buffer
+      type: String
     },
     followings: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }]
   },
   { timestamps: true }
 );
-
-// userSchema.path("email").validate(function(value, done) {
-//   this.model("User").count({ email: value }, function(err, count) {
-//     if (err) {
-//       return done(err);
-//     }
-//     done(!count);
-//   });
-// }, "Email already exists");
 
 userSchema.methods.generateAuthToken = async function() {
   const user = this;
@@ -66,7 +58,7 @@ userSchema.methods.generateAuthToken = async function() {
 };
 
 userSchema.statics.findByCredentials = async function(email, password) {
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }).select("+password");
   if (!user) throw new Error();
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) throw new Error();

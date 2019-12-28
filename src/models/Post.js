@@ -14,8 +14,8 @@ const postSchema = new mongoose.Schema(
       required: true,
       minlength: 4
     },
-    photo: {
-      type: Buffer
+    mediaUrl: {
+      type: String
     },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
@@ -34,14 +34,14 @@ const postSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-postSchema.pre(/^find/, function (next) {
+postSchema.pre(/^find/, function(next) {
   this.start = Date.now();
   const post = this;
-  post.populate("owner", "_id name");
+  post.populate("owner", "_id name avatar");
   next();
 });
 
-postSchema.post(/^find/, function (docs, next) {
+postSchema.post(/^find/, function(docs, next) {
   console.log(`Querry took ${Date.now() - this.start} milliseconds!`);
   next();
 });

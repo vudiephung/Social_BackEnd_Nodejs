@@ -5,7 +5,7 @@ const { sendWelcomeEmail } = require("../emails/account");
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find({}).select(
-      "_id name email about followings followers"
+      "-__v -password -tokens -updatedAt"
     );
     res.status(200).send(users);
   } catch (error) {
@@ -27,13 +27,25 @@ exports.getUserById = async (req, res) => {
 };
 
 exports.createUser = async (req, res) => {
-  delete req.body.confirmPassword;
-  const user = new User(req.body);
   try {
-    await user.save();
-    const token = await user.generateAuthToken();
-    sendWelcomeEmail(user.email, user.name);
-    res.status(201).send({ user, token });
+    const { email, confirmPassword, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if (user)
+      return res.status(400).send({
+        error: "This E-mail is already in used. Please choose another one"
+      });
+    if (password !== confirmPassword) {
+      return res.status(400).send({
+        error: "Password and Confirm Password must be matched."
+      });
+    }
+
+    const newUser = new User(req.body);
+    await newUser.save();
+    const token = await newUser.generateAuthToken();
+    sendWelcomeEmail(newUser.email, newUser.name);
+    res.status(201).send({ newUser, token });
   } catch (e) {
     res.status(400).send({ error: e });
   }
@@ -89,35 +101,29 @@ exports.removeUser = async (req, res) => {
 };
 
 exports.updateUser = async (req, res) => {
-  const allowUpdates = ["name", "email", "password", "about"];
-  const updates = Object.keys(req.body);
-  const isValidUpdate = updates.every(update => allowUpdates.includes(update));
-  if (!isValidUpdate) {
-    throw new Error("Invalid Update!");
-  }
   try {
-    updates.forEach(update => {
-      req.user[update] = req.body[update];
+    const user = await User.findOneAndUpdate({ _id: req.user._id }, req.body, {
+      new: true
     });
-    await req.user.save();
-    res.status(200).send(req.user);
+    console.log("user new", user);
+    res.status(201).send(user);
   } catch (error) {
     res.status(400).send({ error });
   }
 };
 
-exports.uploadAvatar = async (req, res) => {
-  const buffer = await sharp(req.file.buffer)
-    .resize({
-      width: 1000,
-      height: 1000
-    })
-    .png()
-    .toBuffer();
-  req.user.avatar = buffer;
-  await req.user.save();
-  res.status(200).send(req.user);
-};
+// exports.uploadAvatar = async (req, res) => {
+//   const buffer = await sharp(req.file.buffer)
+//     .resize({
+//       width: 1000,
+//       height: 1000
+//     })
+//     .png()
+//     .toBuffer();
+//   req.user.avatar = buffer;
+//   await req.user.save();
+//   res.status(200).send(req.user);
+// };
 
 exports.handleUploadError = (error, req, res, next) => {
   res.status(400).send({ error: error.message });
@@ -223,7 +229,7 @@ exports.findUserToFollow = async (req, res) => {
   followings.push(_id);
   try {
     const response = await User.find({ _id: { $nin: followings } }).select(
-      "_id name"
+      "_id name createdAt followers avatar"
     );
     res.send(response);
   } catch (e) {

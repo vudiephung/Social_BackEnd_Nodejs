@@ -3,7 +3,6 @@ const {
   getPosts,
   createPost,
   getAllPostsByUser,
-  uploadPostPhoto,
   updatePost,
   removePost,
   getPostPhoto,
@@ -19,26 +18,20 @@ const multer = require("multer");
 
 const router = express.Router();
 
-const upload = multer({
-  limits: { fileSize: 30000000 },
-  fileFilter(req, file, cb) {
-    if (!file.originalname.match(/\.(png|jpg|jpeg)$/))
-      return cb(new Error("Your image file is not supported."));
-    cb(undefined, true);
-  }
-});
+// const upload = multer({
+//   limits: { fileSize: 30000000 },
+//   fileFilter(req, file, cb) {
+//     if (!file.originalname.match(/\.(png|jpg|jpeg)$/))
+//       return cb(new Error("Your image file is not supported."));
+//     cb(undefined, true);
+//   }
+// });
 
 router.get("/posts/:id", getPostById);
 router.get("/posts", getPosts);
 router.get("/:id/posts", getAllPostsByUser);
 router.post("/me/post", auth, createPostValidator, createPost);
 router.get("/posts/photo/:id", getPostPhoto);
-router.post(
-  "/me/posts/upload/:id",
-  auth,
-  upload.single("photo"),
-  uploadPostPhoto
-);
 router.patch("/me/posts/:id", auth, updatePost);
 router.delete("/me/posts/:id", auth, removePost);
 router.put("/posts/:id/like", auth, like);
